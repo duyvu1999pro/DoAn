@@ -4,16 +4,19 @@ from tkinter import *
 from tkinter.ttk import *
 import customtkinter
 from pygments.console import dark_colors
+from scapy.all import *
 import function
+from astroid.node_classes import If
 
 # Set dark appearance mode:
 customtkinter.set_appearance_mode("Dark")  # Other: "Light", "System" 
                      
-def donothing():
+def donothing():#cho menu
          filewin = Toplevel(self)
          button = Button(filewin, text="Do nothing button")
          button.pack()
          
+        
 class Redirect():
     
     def __init__(self, widget, autoscroll=True):
@@ -24,6 +27,7 @@ class Redirect():
         self.widget.insert('end', text)
         if self.autoscroll:
             self.widget.see("end")  # autoscroll
+
                      
 class App(customtkinter.CTk):
 
@@ -73,6 +77,7 @@ class App(customtkinter.CTk):
         style.configure("W.TCheckbutton", background = "#505050",
                 foreground = "white", font = ("Century Gothic", 11))
         style.configure("W.TEntry", selectbackground = "#505050", font = ("Century Gothic", 10))
+        style.configure("A.TEntry", selectbackground = "#505050", font = ("Century Gothic", 11))
         #endregion
         
         #region ============ create CTkFrames ============    
@@ -95,13 +100,12 @@ class App(customtkinter.CTk):
         #endregion
         
         #region ============ frame_main ============
-        entry = customtkinter.CTkEntry(master=self.frame_main,    
-                               width=150,
-                               height=25,
-                               corner_radius=10)
-        entry.place(relx=0.1, rely=0.05, anchor=tkinter.CENTER)
-        entry.insert(0,"IP Target")
-          
+        customtkinter.CTkLabel(self.frame_main, text = "Target",height=20,text_font=("Century Gothic", 13,"bold")).place(relx=0.27, rely=0.05, anchor=tkinter.CENTER)
+        customtkinter.CTkLabel(self.frame_main, text = "Ex: 142.250.204.110 , mta.edu.vn",height=16,width=500,text_font=("Century Gothic", 9,"italic")).place(relx=0.7, rely=0.05, anchor=tkinter.CENTER)    
+        self.target_entry = StringVar()
+        self.target_entry_gui= Entry(self.frame_main, textvariable =self.target_entry,style="A.TEntry",width=20)
+        self.target_entry_gui.insert(0,"142.250.204.110")
+        self.target_entry_gui.place(relx=0.4, rely=0.05, anchor=tkinter.CENTER)
         
         #region frame arp
        
@@ -113,7 +117,7 @@ class App(customtkinter.CTk):
                                               hover_color="#7F7F7F",
                                               text_font=("Century Gothic", 11),
                                               border_width=1.5,command=self.check_arp_event,
-                                     text="ARP Spoof")
+                                     text="ARP")
         self.checkbox_arp.place(relx=0.08, rely=0.12, anchor=tkinter.CENTER) 
         
         self.frame_arp = customtkinter.CTkFrame(master=self.frame_main,
@@ -121,17 +125,18 @@ class App(customtkinter.CTk):
                                                  height=90,
                                                  corner_radius=5)
         self.frame_arp.place(relx=0.085, rely=0.16, anchor=tkinter.N)
-        # self.arp_entry = customtkinter.CTkEntry(master=self.frame_arp,    
-        #                        width=90,
-        #                        height=25,
-        #                        corner_radius=10)
-        # self.arp_entry.place(relx=0.47, rely=0.3, anchor=tkinter.N)
-        # self.arp_entry.insert(0,"IP Host")
+        self.arp_check = StringVar(self,"1")
+        self.arp_lan = Radiobutton(self.frame_arp, text ="LAN Spoof", style="W.TRadiobutton",
+                    variable =self.arp_check,value ="2",state='disabled',command=self.arp_lan_event)
+        self.arp_lan.place(relx=0.37, y=35, anchor=tkinter.N)
+        self.arp_wan = Radiobutton(self.frame_arp, text ="Broadcast", style="W.TRadiobutton",
+                    variable =self.arp_check,value = "1",state='disabled',command=self.arp_lan_event)
+        self.arp_wan.place(relx=0.37, y=10, anchor=tkinter.N)
         self.arp_entry = StringVar()
         self.arp_entry_gui= Entry(self.frame_arp, textvariable =self.arp_entry,style="W.TEntry",width=16)
         self.arp_entry_gui.insert(0,"IP Host")
         self.arp_entry_gui.config(state='disabled')
-        self.arp_entry_gui.place(relx=0.47, rely=0.3, anchor=tkinter.N)
+        self.arp_entry_gui.place(relx=0.47, rely=0.65, anchor=tkinter.N)
         #endregion
      
         #region frame icmp
@@ -151,8 +156,7 @@ class App(customtkinter.CTk):
         Radiobutton(self.frame_icmp, text ="Malformed", style="W.TRadiobutton",
                     variable =self.icmp_check,value = "3").place(relx=0.4, y=55, anchor=tkinter.N)
         #endregion
-          
-        
+                 
         #region frame_udp
         self.checkbox_udp = customtkinter.CTkCheckBox(master=self.frame_main,
                                               width=15,
@@ -171,15 +175,9 @@ class App(customtkinter.CTk):
         self.frame_udp.place(relx=0.165, y=190, anchor=tkinter.N)
         self.UDP_port = IntVar(value=0)  
         self.UDP_port_gui= Checkbutton(self.frame_udp,text='Random Port',variable =self.UDP_port,
-                                               style="A.TCheckbutton",state='disabled')
+                                               style="A.TCheckbutton",state='disabled',command=self.udp_port_event)
         self.UDP_port_gui.place(relx=0.26, rely=0.12, anchor=tkinter.CENTER)
         customtkinter.CTkLabel(self.frame_udp, text = "Specific Port",height=16,text_font=("Century Gothic", 10)).place(x = 1,y =35)       
-        # self.entry_port_udp = customtkinter.CTkEntry(master=self.frame_udp,    
-        #                        width=37,
-        #                        height=20,
-        #                        corner_radius=10)
-        # self.entry_port_udp.place(relx=0.5, rely=0.27, anchor=tkinter.CENTER)
-        # self.entry_port_udp.insert(0,"80")
         self.udp_entry_port = StringVar()
         self.udp_entry_port_gui= Entry(self.frame_udp, textvariable =self.udp_entry_port,style="W.TEntry",width=4)
         self.udp_entry_port_gui.insert(0,"80")
@@ -188,7 +186,7 @@ class App(customtkinter.CTk):
         
         self.UDP_data = IntVar(value=0)  
         self.UDP_data_gui= Checkbutton(self.frame_udp,text='Random data',variable =self.UDP_data,
-                                               style="A.TCheckbutton",state='disabled')
+                                               style="A.TCheckbutton",state='disabled',command=self.udp_data_event)
         self.UDP_data_gui.place(relx=0.26, rely=0.57, anchor=tkinter.CENTER)
         customtkinter.CTkLabel(self.frame_udp, text = "Craft Data ",height=15,text_font=("Century Gothic", 10)).place(x = 1,y =99)       
         # self.entry_data_udp = customtkinter.CTkEntry(master=self.frame_udp,    
@@ -269,15 +267,9 @@ class App(customtkinter.CTk):
         self.Flag_C_gui.place(relx=0.92, y=121, anchor=tkinter.N)
         self.TCP_port = IntVar(value=0)  
         self.TCP_port_gui = Checkbutton(self.frame_tcp,text='Random Port',variable =self.TCP_port,state='disabled',
-                                               style="A.TCheckbutton")
+                                               style="A.TCheckbutton",command=self.tcp_port_event)
         self.TCP_port_gui.place(relx=0.26, y=170, anchor=tkinter.CENTER)
         customtkinter.CTkLabel(self.frame_tcp, text = "Specific Port",height=16,text_font=("Century Gothic", 10)).place(x = 1,y =187)       
-        # self.entry_port_tcp = customtkinter.CTkEntry(master=self.frame_tcp,    
-        #                        width=37,
-        #                        height=20,
-        #                        corner_radius=10)
-        # self.entry_port_tcp.place(relx=0.42, y=194, anchor=tkinter.CENTER)
-        # self.entry_port_tcp.insert(0,"80") 
         self.tcp_entry_port = StringVar()
         self.tcp_entry_port_gui= Entry(self.frame_tcp, textvariable =self.tcp_entry_port,style="W.TEntry",width=4)
         self.tcp_entry_port_gui.insert(0,"80")
@@ -285,15 +277,9 @@ class App(customtkinter.CTk):
         self.tcp_entry_port_gui.place(relx=0.42, y=194, anchor=tkinter.CENTER)
         self.TCP_data = IntVar(value=0)  
         self.TCP_data_gui= Checkbutton(self.frame_tcp,text='Random data',variable =self.TCP_data,state='disabled',
-                                               style="A.TCheckbutton")
+                                               style="A.TCheckbutton",command=self.tcp_data_event)
         self.TCP_data_gui.place(relx=0.26, y=235, anchor=tkinter.CENTER)
         customtkinter.CTkLabel(self.frame_tcp, text = "Craft Data ",height=16,text_font=("Century Gothic", 10)).place(x = 1,y =255)       
-        # self.entry_data_tcp = customtkinter.CTkEntry(master=self.frame_tcp,    
-        #                        width=130,
-        #                        height=20,
-        #                        corner_radius=10)
-        # self.entry_data_tcp.place(relx=0.56, y=262, anchor=tkinter.CENTER)
-        # self.entry_data_tcp.insert(0,"duyvu")
         self.tcp_entry_data = StringVar()
         self.tcp_entry_data_gui = Entry(self.frame_tcp, textvariable =self.tcp_entry_data,style="W.TEntry",width=18)
         self.tcp_entry_data_gui.insert(0,"duyvu")
@@ -310,10 +296,12 @@ class App(customtkinter.CTk):
         customtkinter.CTkLabel(self.frame_main, text = "Layer7",text_font=("Century Gothic", 11)).place(relx=0.72, rely=0.09) 
         self.CheckSNMP = IntVar(value=0)
         self.CheckNTP = IntVar(value=0)
-        self.CheckHTTP = IntVar(value=0) 
+        self.CheckHTTP = IntVar(value=0)
+        self.CheckHTTP_2 = IntVar(value=0)  
         Checkbutton(self.frame_layer7,text='SNMP',variable =self.CheckSNMP,style="W.TCheckbutton").place(relx=0.2, y=10, anchor=tkinter.N)
         Checkbutton(self.frame_layer7,text='NTP',variable =self.CheckNTP,style="W.TCheckbutton").place(relx=0.6, y=10, anchor=tkinter.N)
-        Checkbutton(self.frame_layer7,text='HTTP',variable =self.CheckHTTP,style="W.TCheckbutton").place(relx=0.2, y=45, anchor=tkinter.N)
+        Checkbutton(self.frame_layer7,text='HTTP Get',variable =self.CheckHTTP,style="W.TCheckbutton").place(relx=0.23, y=45, anchor=tkinter.N)
+        Checkbutton(self.frame_layer7,text='HTTP Post',variable =self.CheckHTTP_2,style="W.TCheckbutton").place(relx=0.72, y=45, anchor=tkinter.N)
         #endregion
         
         #endregion
@@ -323,7 +311,7 @@ class App(customtkinter.CTk):
         
         text = tkinter.Text(self.frame_cmd,height=10,width=40) 
         text.pack( side = LEFT, fill = BOTH )      
-        text.config(state=DISABLED)   
+        #text.config(state=DISABLED)   
         
         scrollbar = tkinter.Scrollbar(self.frame_cmd)    
         scrollbar.pack(side='right', fill='y')
@@ -332,7 +320,7 @@ class App(customtkinter.CTk):
         scrollbar['command'] = text.yview
 
         #old_stdout = sys.stdout    
-        #sys.stdout = Redirect(text)
+        sys.stdout = Redirect(text)
         #endregion
         
         #region ============ frame_right ============
@@ -369,16 +357,29 @@ class App(customtkinter.CTk):
         #endregion
     
     def check_arp_event(self):
-        #if str(self.arp_entry_gui["state"])=="disabled":
         if self.checkbox_arp.get()==1:
-            self.arp_entry_gui.config(state='enabled')
+            if self.arp_check.get()=="2":
+                self.arp_entry_gui.config(state='enabled')
+            self.arp_lan.config(state='enabled')
+            self.arp_wan.config(state='enabled')
         else:
             self.arp_entry_gui.config(state='disabled')
-            
+            self.arp_lan.config(state='disabled')
+            self.arp_wan.config(state='disabled')
+
+    def arp_lan_event(self):
+        if self.arp_check.get()=="2":
+            self.arp_entry_gui.config(state='enabled')
+        else:
+            self.arp_entry_gui.config(state='disabled')    
+                                  
     def check_udp_event(self):
         if self.checkbox_udp.get()==1:
-            self.udp_entry_port_gui.config(state='enabled')
-            self.udp_entry_data_gui.config(state='enabled')
+            if self.UDP_port.get()==0:
+                self.udp_entry_port_gui.config(state='enabled')
+            if self.UDP_data.get()==0:
+                self.udp_entry_data_gui.config(state='enabled')
+            
             self.UDP_data_gui.config(state='enabled')
             self.UDP_port_gui.config(state='enabled')
         else:
@@ -386,7 +387,19 @@ class App(customtkinter.CTk):
             self.udp_entry_data_gui.config(state='disabled')  
             self.UDP_data_gui.config(state='disabled')  
             self.UDP_port_gui.config(state='disabled')  
-                       
+
+    def udp_port_event(self):
+        if self.UDP_port.get()==1:
+            self.udp_entry_port_gui.config(state='disabled')
+        else:
+            self.udp_entry_port_gui.config(state='enabled')
+
+    def udp_data_event(self):
+        if self.UDP_data.get()==1:
+            self.udp_entry_data_gui.config(state='disabled')
+        else:
+            self.udp_entry_data_gui.config(state='enabled')
+                          
     def check_tcp_event(self):
         if self.checkbox_tcp.get()==1:
             self.tcp_type_gui1.config(state='enabled')
@@ -417,8 +430,10 @@ class App(customtkinter.CTk):
                 self.Flag_U_gui.config(state='enabled')
                 self.Flag_E_gui.config(state='enabled')
                 self.Flag_C_gui.config(state='enabled')
-                self.tcp_entry_port_gui.config(state='enabled')
-                self.tcp_entry_data_gui.config(state='enabled')
+                if self.TCP_port.get()==0:
+                    self.tcp_entry_port_gui.config(state='enabled')
+                if self.TCP_data.get()==0:
+                    self.tcp_entry_data_gui.config(state='enabled')
                 self.TCP_port_gui.config(state='enabled')
                 self.TCP_data_gui.config(state='enabled')
         else:
@@ -440,26 +455,143 @@ class App(customtkinter.CTk):
                 self.tcp_entry_data_gui.config(state='disabled')
                 self.TCP_port_gui.config(state='disabled')
                 self.TCP_data_gui.config(state='disabled')
-            
+
+    def tcp_port_event(self):
+        if self.TCP_port.get()==1:
+            self.tcp_entry_port_gui.config(state='disabled')
+        else:
+            self.tcp_entry_port_gui.config(state='enabled')
+
+    def tcp_data_event(self):
+        if self.TCP_data.get()==1:
+            self.tcp_entry_data_gui.config(state='disabled')
+        else:
+            self.tcp_entry_data_gui.config(state='enabled')        
             
     def start_button_event(self):
-        self.button_start.config(state='disabled')
-        self.button_start.hover=False
-        self.button_stop.config(state='enabled')
-        self.button_stop.hover=True
-       # messagebox.showinfo("showinfo", function.test())
-              
+        ip_target = str(self.target_entry.get())
+        #if function.IPvalid(ip_target) == False:
+        if function.is_fqdn(ip_target)==False:
+            messagebox.showinfo("Thông báo", "IP không hợp lệ")
+        elif self.checkbox_udp.get() == 1 and self.UDP_port.get() != 1 and function.portValid(self.udp_entry_port.get())== False:
+            messagebox.showinfo("Thông báo", "UDP port không đúng định dạng")
+        elif self.checkbox_tcp.get() == 1 and str(self.tcp_type.get())=="2" and self.TCP_port.get() != 1 and function.portValid(self.tcp_entry_port.get())== False:
+            messagebox.showinfo("Thông báo", "TCP port không đúng định dạng")
+        elif self.checkbox_arp.get()==1 and self.arp_check.get()=="2" and str(function.get_mac(ip_target))=="None":
+            messagebox.showinfo("Thông báo", "Target IP không thuộc mạng LAN")
+        else:
+            if function.Beginable(self)== True : 
+                self.threads = []
+                ip_target=function.fqdn_to_ip(ip_target)                       
+                self.button_start.config(state='disabled')
+                self.button_start.hover=False
+                self.button_stop.config(state='enabled')
+                self.button_stop.hover=True
+                t = function.thread_with_trace(target = function.capture,args=(ip_target, ))
+                t.start()
+                self.threads.append(t)
+                if self.checkbox_arp.get()==1:
+                    t = function.thread_with_trace(target = function.arp,args=(ip_target,ip_target )  )
+                    t.start()
+                    self.threads.append(t)  
+                if self.icmp_check.get() =="2":
+                    t = function.thread_with_trace(target = function.icmp,args=(ip_target, )  )
+                    t.start()
+                    self.threads.append(t) 
+                if self.icmp_check.get() =="3":
+                    t = function.thread_with_trace(target = function.malform_icmp,args=(ip_target, )  )
+                    t.start()
+                    self.threads.append(t) 
+                
+                if self.checkbox_udp.get() == 1:
+                        udp_des_port= 1
+                        udp_data= str(self.udp_entry_data.get())
+                    
+                        if self.UDP_port.get() == 1:
+                            udp_des_port= RandShort()
+                        else:
+                            udp_des_port= int(self.udp_entry_port.get())
+                        if self.UDP_data.get() == 1:
+                            udp_data= function.randData()             
+                        t = function.thread_with_trace(target = function.udp,args=(ip_target,udp_des_port,udp_data )  )
+                        t.start()
+                        self.threads.append(t) 
+                
+                if self.checkbox_tcp.get() == 1:
+                    flag = "" 
+                    if str(self.tcp_type.get())=="1":    #normal
+                        if str(self.tcp_ex.get())=="1":  #syn
+                            flag = "S"    
+                        else:                       #xmas
+                            flag = "FSRPAUEC"    
+                        t = function.thread_with_trace(target = function.tcp,args=(ip_target,RandShort(),flag,function.randData() )  )
+                        t.start()
+                        self.threads.append(t)
+                    else:  
+                            if self.Flag_F.get()==1:
+                                flag += "F"     
+                            if self.Flag_S.get()==1:
+                                flag += "S" 
+                            if self.Flag_R.get()==1:
+                                flag += "R" 
+                            if self.Flag_P.get()==1:
+                                flag += "P" 
+                            if self.Flag_A.get()==1:
+                                flag += "A" 
+                            if self.Flag_U.get()==1:
+                                flag += "U" 
+                            if self.Flag_E.get()==1:
+                                flag += "E" 
+                            if self.Flag_C.get()==1:
+                                flag += "C"
+                            
+                            tcp_data= str(self.tcp_entry_data.get()) 
+                            tcp_des_port= 1
+                            
+                            if self.TCP_port.get() == 1:
+                                tcp_des_port= RandShort()   
+                            else:
+                                tcp_des_port= int(self.tcp_entry_port.get())
+                            if self.TCP_data.get() == 1:
+                                tcp_data= function.randData()  
+                            t = function.thread_with_trace(target = function.tcp,args=(ip_target,tcp_des_port,flag,tcp_data )  )
+                            t.start()
+                            self.threads.append(t)
+                                                           
+                if self.CheckNTP.get() == 1:
+                    t = function.thread_with_trace(target = function.ntp,args=(ip_target, )  )
+                    t.start()
+                    self.threads.append(t)
+                if self.CheckSNMP.get() == 1:
+                    t = function.thread_with_trace(target = function.snmp,args=(ip_target, )  )
+                    t.start()
+                    self.threads.append(t)
+                if self.CheckHTTP.get() == 1:
+                    t = function.thread_with_trace(target = function.http,args=(ip_target,80,1 )  )
+                    t.start()
+                    self.threads.append(t)
+                if self.CheckHTTP_2.get() == 1:
+                    t = function.thread_with_trace(target = function.http,args=(ip_target,80,2 )  )
+                    t.start()
+                    self.threads.append(t)
+            else:
+                messagebox.showinfo("Thông báo", "chưa chọn chức năng")        
+                      
     def stop_button_event(self):
         self.button_start.config(state='enabled')
         self.button_start.hover=True
         self.button_stop.config(state='disabled')
         self.button_stop.hover=False
-
+        for t in self.threads:
+            t.kill()
+        print("\nTERMINATE   !!!")
+        
     def on_closing(self, event=0):
         self.destroy()
 
     def start(self):
         self.mainloop()
+
 
 
 if __name__ == "__main__":
