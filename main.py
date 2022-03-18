@@ -14,8 +14,7 @@ customtkinter.set_appearance_mode("Dark")  # Other: "Light", "System"
 def donothing():#cho menu
          filewin = Toplevel(self)
          button = Button(filewin, text="Do nothing button")
-         button.pack()
-         
+         button.pack() 
         
 class Redirect():
     
@@ -45,21 +44,19 @@ class App(customtkinter.CTk):
         self.geometry(str(App.WIDTH) + "x" + str(App.HEIGHT))
         self.minsize(App.WIDTH, App.HEIGHT)
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
-        # if sys.platform == "darwin":
-        #     self.bind("<Command-q>", self.on_closing)
-        #     self.bind("<Command-w>", self.on_closing)
-        #     self.createcommand('tk::mac::Quit', self.on_closing)
+        self.resizable(False, False)
         
         #region menu
         menubar = Menu(self)
         filemenu = Menu(menubar, tearoff=0)
-        filemenu.add_command(label="Save", command=donothing)
+        filemenu.add_command(label="Save As...", command=lambda : function.saveToPcap(self.TrafficLog))
+        filemenu.add_command(label="Gen Report", command=donothing)
         filemenu.add_separator()
         filemenu.add_command(label="Exit", command=self.quit)
         
         helpmenu = Menu(menubar, tearoff=0)
-        helpmenu.add_command(label="Help Index", command=donothing)
-        helpmenu.add_command(label="About...", command=donothing)
+        helpmenu.add_command(label="Guide", command=donothing)
+        helpmenu.add_command(label="About", command=donothing)
         
         menubar.add_cascade(label="Menu", menu=filemenu)
         menubar.add_cascade(label="Help", menu=helpmenu)
@@ -78,6 +75,7 @@ class App(customtkinter.CTk):
                 foreground = "white", font = ("Century Gothic", 11))
         style.configure("W.TEntry", selectbackground = "#505050", font = ("Century Gothic", 10))
         style.configure("A.TEntry", selectbackground = "#505050", font = ("Century Gothic", 11))
+        style.configure("A.TLabel", background = "#3F3F3F",foreground="white", font=("Arial", 12,"italic"))
         #endregion
         
         #region ============ create CTkFrames ============    
@@ -100,20 +98,27 @@ class App(customtkinter.CTk):
         #endregion
         
         #region ============ frame_main ============
-        customtkinter.CTkLabel(self.frame_main, text = "Target",height=20,text_font=("Century Gothic", 13,"bold")).place(relx=0.27, rely=0.05, anchor=tkinter.CENTER)
-        customtkinter.CTkLabel(self.frame_main, text = "Ex: 142.250.204.110 , mta.edu.vn",height=16,width=500,text_font=("Century Gothic", 9,"italic")).place(relx=0.7, rely=0.05, anchor=tkinter.CENTER)    
+        customtkinter.CTkLabel(self.frame_main, text = "Target",height=20,text_font=("Century Gothic", 13,"bold")).place(relx=0.07, rely=0.05, anchor=tkinter.CENTER)
+        #customtkinter.CTkLabel(self.frame_main, text = "Ex: 142.250.204.110 , mta.edu.vn",height=16,width=500,text_font=("Century Gothic", 9,"italic")).place(relx=0.7, rely=0.05, anchor=tkinter.CENTER)    
         self.target_entry = StringVar()
         self.target_entry_gui= Entry(self.frame_main, textvariable =self.target_entry,style="A.TEntry",width=20)
         self.target_entry_gui.insert(0,"142.250.204.110")
-        self.target_entry_gui.place(relx=0.4, rely=0.05, anchor=tkinter.CENTER)
-        
+        self.target_entry_gui.place(relx=0.2, rely=0.05, anchor=tkinter.CENTER)
+        customtkinter.CTkLabel(self.frame_main, text = "Network Interface",height=20,width=300,text_font=("Century Gothic", 13,"bold")).place(relx=0.57, rely=0.05, anchor=tkinter.CENTER)
+        self.network_adapter= StringVar()
+        self.network_adapter_gui = Combobox(self.frame_main, width = 27,state="readonly", 
+                            textvariable = self.network_adapter)
+        self.network_adapter_gui.bind("<<ComboboxSelected>>",lambda e: self.frame_main.focus())
+        self.network_adapter_gui['values'] = function.getNetworkAdapterName()
+        self.network_adapter_gui.current(0)
+        self.network_adapter_gui.place(relx=0.79, rely=0.05, anchor=tkinter.CENTER)
         #region frame arp
        
         self.checkbox_arp = customtkinter.CTkCheckBox(master=self.frame_main,
                                               width=15,
                                               height=15,
                                               fg_color="#D8554D",
-                                              border_color="#D60C42",
+                                              border_color="white",
                                               hover_color="#7F7F7F",
                                               text_font=("Century Gothic", 11),
                                               border_width=1.5,command=self.check_arp_event,
@@ -162,7 +167,7 @@ class App(customtkinter.CTk):
                                               width=15,
                                               height=15,
                                               fg_color="#D8554D",
-                                              border_color="#D60C42",
+                                              border_color="white",
                                               hover_color="#7F7F7F",
                                               text_font=("Century Gothic", 11),
                                               border_width=1.5,command=self.check_udp_event,
@@ -207,7 +212,7 @@ class App(customtkinter.CTk):
                                               width=15,
                                               height=15,
                                               fg_color="#D8554D",
-                                              border_color="#D60C42",
+                                              border_color="white",
                                               hover_color="#7F7F7F",
                                               text_font=("Century Gothic", 11),
                                               border_width=1.5,command=self.check_tcp_event,
@@ -319,14 +324,24 @@ class App(customtkinter.CTk):
         text['yscrollcommand'] = scrollbar.set
         scrollbar['command'] = text.yview
 
-        #old_stdout = sys.stdout    
         sys.stdout = Redirect(text)
         #endregion
         
         #region ============ frame_right ============
                
-        self.label_bandwidth= customtkinter.CTkLabel(self.frame_right, text = "Bandwidth",text_font=("Arial", 12)).place(x = -12,y =17)
-        self.label_bandwidth= customtkinter.CTkLabel(self.frame_right, text = "Size",text_font=("Arial", 12)).place(x = -12,y =67)   
+        customtkinter.CTkLabel(self.frame_right, text = "Bandwidth",width=90,text_font=("Arial", 12,"bold")).place(x = 10,y =17)
+        customtkinter.CTkLabel(self.frame_right, text = "Data",width=40,text_font=("Arial", 12,"bold")).place(x = 120,y =17)
+        customtkinter.CTkLabel(self.frame_right, text = "Packets",width=70,text_font=("Arial", 12,"bold")).place(x = 200,y =17)
+        
+        self.label_bandwidth = Label(self.frame_right, text = "0 Bps",font=("Arial", 11,"italic"),style="A.TLabel")
+        self.label_bandwidth.place(x = 12,y =37) 
+        
+        self.label_size = Label(self.frame_right, text = "0 KB",font=("Arial", 11,"italic"),style="A.TLabel")
+        self.label_size.place(x = 122,y =37)      
+        
+        self.label_count = Label(self.frame_right, text = "0",font=("Arial", 11,"italic"),style="A.TLabel")
+        self.label_count.place(x = 212,y =37)     
+              
         self.button_start = customtkinter.CTkButton(master=self.frame_right,
                                                     width=80,
                                                     height=40,
@@ -338,9 +353,8 @@ class App(customtkinter.CTk):
                                                 command=self.start_button_event,
                                                 border_width=3,
                                                 corner_radius=8)
-        self.button_start.place(relx=0.75, y=25, anchor=tkinter.N)
-
-        
+        self.button_start.place(relx=0.25, y=85, anchor=tkinter.N)
+      
         self.button_stop = customtkinter.CTkButton(master=self.frame_right,
                                                 border_color="#C12020",
                                                 bg_color="#C12020",
@@ -467,8 +481,12 @@ class App(customtkinter.CTk):
             self.tcp_entry_data_gui.config(state='disabled')
         else:
             self.tcp_entry_data_gui.config(state='enabled')        
+    
             
     def start_button_event(self):
+        #t = function.thread_with_trace(target = self.update_status,)
+        #t.start()
+        #self.dynamic_label()
         ip_target = str(self.target_entry.get())
         #if function.IPvalid(ip_target) == False:
         if function.is_fqdn(ip_target)==False:
@@ -481,15 +499,17 @@ class App(customtkinter.CTk):
             messagebox.showinfo("Thông báo", "Target IP không thuộc mạng LAN")
         else:
             if function.Beginable(self)== True : 
+                self.TrafficLog = sniff(iface=str(self.network_adapter.get()), prn=lambda x: x.summary(),count=1)
                 self.threads = []
                 ip_target=function.fqdn_to_ip(ip_target)                       
                 self.button_start.config(state='disabled')
                 self.button_start.hover=False
                 self.button_stop.config(state='enabled')
                 self.button_stop.hover=True
-                t = function.thread_with_trace(target = function.capture,args=(ip_target, ))
+                t = function.thread_with_trace(target = function.capture,args=(ip_target,self,str(self.network_adapter.get()), ))
                 t.start()
                 self.threads.append(t)
+               
                 if self.checkbox_arp.get()==1:
                     t = function.thread_with_trace(target = function.arp,args=(ip_target,ip_target )  )
                     t.start()
@@ -501,8 +521,7 @@ class App(customtkinter.CTk):
                 if self.icmp_check.get() =="3":
                     t = function.thread_with_trace(target = function.malform_icmp,args=(ip_target, )  )
                     t.start()
-                    self.threads.append(t) 
-                
+                    self.threads.append(t)                 
                 if self.checkbox_udp.get() == 1:
                         udp_des_port= 1
                         udp_data= str(self.udp_entry_data.get())
@@ -515,8 +534,7 @@ class App(customtkinter.CTk):
                             udp_data= function.randData()             
                         t = function.thread_with_trace(target = function.udp,args=(ip_target,udp_des_port,udp_data )  )
                         t.start()
-                        self.threads.append(t) 
-                
+                        self.threads.append(t)                 
                 if self.checkbox_tcp.get() == 1:
                     flag = "" 
                     if str(self.tcp_type.get())=="1":    #normal
@@ -556,8 +574,7 @@ class App(customtkinter.CTk):
                                 tcp_data= function.randData()  
                             t = function.thread_with_trace(target = function.tcp,args=(ip_target,tcp_des_port,flag,tcp_data )  )
                             t.start()
-                            self.threads.append(t)
-                                                           
+                            self.threads.append(t)                                                           
                 if self.CheckNTP.get() == 1:
                     t = function.thread_with_trace(target = function.ntp,args=(ip_target, )  )
                     t.start()
@@ -578,6 +595,7 @@ class App(customtkinter.CTk):
                 messagebox.showinfo("Thông báo", "chưa chọn chức năng")        
                       
     def stop_button_event(self):
+        function.getSumPackets(self.TrafficLog)
         self.button_start.config(state='enabled')
         self.button_start.hover=True
         self.button_stop.config(state='disabled')
@@ -586,7 +604,12 @@ class App(customtkinter.CTk):
             t.kill()
         print("\nTERMINATE   !!!")
         
+        
+        
     def on_closing(self, event=0):
+        if self.button_stop.state=='enabled':
+            for t in self.threads:
+                t.kill()
         self.destroy()
 
     def start(self):

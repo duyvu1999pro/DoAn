@@ -5,10 +5,101 @@ import string
 import secrets 
 import re
 import socket
+import subprocess
+from tkinter.filedialog import asksaveasfile
+
+class thread_with_trace(threading.Thread):
+    def __init__(self, *args, **keywords):
+        threading.Thread.__init__(self, *args, **keywords)
+        self.killed = False 
+    def start(self):
+        self.__run_backup = self.run
+        self.run = self.__run     
+        threading.Thread.start(self)
+    def __run(self):
+        sys.settrace(self.globaltrace)
+        self.__run_backup()
+        self.run = self.__run_backup
+    def globaltrace(self, frame, event, arg):
+        if event == 'call':
+            return self.localtrace
+        else:
+            return None
+    def localtrace(self, frame, event, arg):
+        if self.killed:
+            if event == 'line':
+                raise SystemExit()
+        return self.localtrace
+    def kill(self):
+        self.killed = True        
 
 def test():
     return "hello"
 
+
+        
+def getSizeTraffic(packets):#bytes
+    size = 0
+    for item in packets:
+        size += len(item)
+    return size
+
+def convertSize(size):
+    if size>=1024:
+        size = size/1024      #KB
+    if size>=1048576:
+        size = size/1024        #MB
+    return round(size,2)
+
+def sizeUnit(size):
+    if size < 1024:
+        return "Bytes"
+    if size >= 1024 and size < 1048576:
+        return "KB"
+    if size >= 1048576:
+        return "MB"
+    
+def getSumPackets(packets):
+    return len(packets)
+
+def getTrafficInterVal(packets):#second
+    interval = packets[len(packets)-1].time-packets[0].time
+    return interval
+
+def getBandwidth(packets):#bps
+    bandwidth = getSizeTraffic(packets)*8/getTrafficInterVal(packets)
+    return bandwidth
+
+def convertBandwidth(bandwidth):
+    if bandwidth>=1000:
+        bandwidth = bandwidth/1000      #Kbps
+    if bandwidth>=1000000:
+        bandwidth = bandwidth/1000      #Mbps
+    return round(bandwidth,2)
+    
+def bandwidthUnit(bandwidth):
+    if bandwidth < 1000:
+        return "Bps"
+    if bandwidth >= 1000 and bandwidth < 1000000:
+        return "Kbps"
+    if bandwidth >= 1000000:
+        return "Mbps"
+    
+def saveToPcap(packets):
+    files = [('Pcap Files', '*.pcap')]
+    file = asksaveasfile(filetypes = files, defaultextension = files)
+    wrpcap(str(file.name), packets)                     
+
+def getNetworkAdapterName():
+    string= str(subprocess.check_output("ipconfig"))
+    cut = string.split('\\n')
+    result = []
+    for i in cut:
+        temp= re.search(r'(?<=adapter )(.*)(?=:)', i)
+        if temp != None:
+            result.append(temp.group())
+    return result
+    
 def is_fqdn(host):
     try:
         host = host.replace("https://", "").replace("http://", "").replace("www.", "")
@@ -124,31 +215,15 @@ def http(ip,port,type):
         byt = (f"{method} /{url_path} HTTP/1.1\nHost: {ip}\n\n").encode()
         dos.send(byt)
     
-def capture(ip):
+def capture(ip,self,interface):
     condition="host "+ip
-    sniff(filter=condition, iface="Wi-Fi", prn=lambda x: x.summary())
-
-class thread_with_trace(threading.Thread):
-    def __init__(self, *args, **keywords):
-        threading.Thread.__init__(self, *args, **keywords)
-        self.killed = False 
-    def start(self):
-        self.__run_backup = self.run
-        self.run = self.__run     
-        threading.Thread.start(self)
-    def __run(self):
-        sys.settrace(self.globaltrace)
-        self.__run_backup()
-        self.run = self.__run_backup
-    def globaltrace(self, frame, event, arg):
-        if event == 'call':
-            return self.localtrace
-        else:
-            return None
-    def localtrace(self, frame, event, arg):
-        if self.killed:
-            if event == 'line':
-                raise SystemExit()
-        return self.localtrace
-    def kill(self):
-        self.killed = True        
+    capture = sniff(filter=condition, iface=interface, prn=lambda x: x.summary(),count=1)
+    while self.button_stop.state=='enabled':
+        capture1= sniff(filter=condition, iface=interface, prn=lambda x: x.summary(),count=1)
+        capture = capture + capture1
+        self.TrafficLog = capture
+        bandwidth = getBandwidth(capture)
+        size = getSizeTraffic(capture)
+        self.label_bandwidth["text"] = str(convertBandwidth(bandwidth)) + " " + bandwidthUnit(bandwidth)
+        self.label_size["text"] = str(convertSize(size)) + " " + sizeUnit(size)
+        self.label_count["text"] = str(getSumPackets(capture))
