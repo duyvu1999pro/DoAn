@@ -562,11 +562,9 @@ class App(customtkinter.CTk):
             messagebox.showinfo("Thông báo", "UDP port không đúng định dạng, không thể thực hiện tấn công UDP")
         elif self.checkbox_tcp.get() == 1 and str(self.tcp_type.get())=="2" and self.TCP_port.get() != 1 and function.portValid(self.tcp_entry_port.get())== False:
             messagebox.showinfo("Thông báo", "TCP port không đúng định dạng, không thể thực hiện tấn công TCP")
-        elif self.checkbox_arp.get()==1 and self.arp_check.get()=="2":
-            if str(function.get_mac(ip_target))=="None":
-                messagebox.showinfo("Thông báo", "Target IP không thuộc mạng LAN, không thể thực hiện tấn công LAN Spoof")
-            else:
-                if function.IPvalid(str(self.arp_entry.get()))==False:
+        elif self.checkbox_arp.get()==1 and self.arp_check.get()=="2" and str(function.get_mac(ip_target))=="None":
+            messagebox.showinfo("Thông báo", "Target IP không thuộc mạng LAN, không thể thực hiện tấn công LAN Spoof")
+        elif self.checkbox_arp.get()==1 and self.arp_check.get()=="2" and function.IPvalid(str(self.arp_entry.get()))==False:
                     messagebox.showinfo("Thông báo", "IP host không đúng định dạng IP, vui lòng nhập lại IP host")
         elif function.checkTrueInterface(self)==False:
             messagebox.showinfo("Thông báo", "Dữ liệu sinh không qua Interface này, vui lòng chọn đúng Interface")
@@ -595,9 +593,10 @@ class App(customtkinter.CTk):
                             t.start()
                             self.threads.append(t)  
                     else:
-                        t = function.thread_with_trace(target = function.spoof,args=(ip_target,ip_target,True,)  )
+                        t = function.thread_with_trace(target = function.arp_spoof,args=(ip_target,str(self.arp_entry.get()),)  )
                         t.start()
                         self.threads.append(t)  
+                        
                 if self.icmp_check.get() =="2":
                     for i in range(0,speed):
                         t = function.thread_with_trace(target = function.icmp,args=(ip_target, )  )
